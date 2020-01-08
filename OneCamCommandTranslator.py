@@ -1,3 +1,4 @@
+from ViscaCommandClassificator import classify_visca_command as classificator
 import socket
 import logging
 
@@ -13,8 +14,6 @@ class OneCamCommandTranslator:
         visca_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         visca_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         visca_socket.bind(self.__server_addr)
-        visca_socket.setblocking(False)
-        visca_socket.settimeout(1)
         return visca_socket
 
     def __receive(self):
@@ -23,7 +22,7 @@ class OneCamCommandTranslator:
         return data, addr
 
     def __process_command(self, data):
-        print(data.decode())
+        command = classificator(data)
 
     def run_once(self):
         try:
