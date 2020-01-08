@@ -1,4 +1,6 @@
-from ViscaCommandClassificator import classify_visca_command as classificator
+from ViscaCommandClassificator import classify_visca_command
+from ViscaCommandFormer import form_visca_command
+import ONVIFCameraControl
 import socket
 import logging
 
@@ -16,18 +18,41 @@ class OneCamCommandTranslator:
         visca_socket.bind(self.__server_addr)
         return visca_socket
 
-    def __receive(self):
-        data, addr = self.__visca_socket.recvfrom(16)
-        logger.debug(f'Received {data.hex()} from {addr}')
-        return data, addr
-
-    def __process_command(self, data):
-        command = classificator(data)
-
     def run_once(self):
-        try:
-            data, addr = self.__receive()
-            self.__process_command(data)
-        except socket.timeout:
-            raise TimeoutError
+        data, client_addr = self.__receive()
+        self.__process_command(data, client_addr)
 
+    def __receive(self):
+        data, client_addr = self.__visca_socket.recvfrom(16)
+        logger.debug(f'Received {data.hex()} from {client_addr}')
+        return data, client_addr
+
+    def __send(self, data, addr):
+        logger.debug(f'Sending {data.hex()} to {addr}')
+        self.__visca_socket.sendto(data, addr)
+
+    def __process_command(self, data, client_addr):
+        COMMAND_HANDLER_DEFINER = {
+            'unknown': self.__unknown_handler,
+            'Pan-tiltPosInq': self.__Pan_tiltPosInq_handler
+        }
+
+        command = classify_visca_command(data)
+        command_name = command['command']
+        command_handler = COMMAND_HANDLER_DEFINER[command_name]
+        command_handler(command, client_addr)
+
+    def __unknown_handler(self, command, client_addr):
+        pass
+
+    def __Pan_tiltPosInq_handler(self, command, client_addr):
+        x = command['x']
+        y = x + 8
+        visca_command_description = {
+            'Command': 'Pan-tiltPosInq',
+            'wwww': 0,
+            'zzzz': 0,
+            'y': y
+        }
+        visca_responce = form_visca_command(visca_command_description)
+        self.__send(visca_responce, client_addr)
