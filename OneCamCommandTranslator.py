@@ -34,7 +34,9 @@ class OneCamCommandTranslator:
     def __process_command(self, data, client_addr):
         COMMAND_HANDLER_DEFINER = {
             'unknown': self.__unknown_handler,
-            'Pan-tiltPosInq': self.__Pan_tiltPosInq_handler
+            'Pan-tiltPosInq': self.__Pan_tiltPosInq_handler,
+            'CAM_ZoomPosInq': self.__CAM_ZoomPosInq_handler,
+            'CAM_FocusPosInq': self.__CAM_FocusPosInq_handler
         }
 
         command = classify_visca_command(data)
@@ -52,6 +54,34 @@ class OneCamCommandTranslator:
             'Command': 'Pan-tiltPosInq',
             'wwww': 0,
             'zzzz': 0,
+            'y': y
+        }
+        visca_responce = form_visca_command(visca_command_description)
+        self.__send(visca_responce, client_addr)
+
+    def __CAM_ZoomPosInq_handler(self, command, client_addr):
+        x = command['x']
+        y = x + 8
+        visca_command_description = {
+            'Command': 'CAM_ZoomPosInq',
+            'p': 0,
+            'q': 0,
+            'r': 0,
+            's': 0,
+            'y': y
+        }
+        visca_responce = form_visca_command(visca_command_description)
+        self.__send(visca_responce, client_addr)
+
+    def __CAM_FocusPosInq_handler(self, command, client_addr):
+        x = command['x']
+        y = x + 8
+        visca_command_description = {
+            'Command': 'CAM_FocusPosInq',
+            'p': 0,
+            'q': 0,
+            'r': 0,
+            's': 0,
             'y': y
         }
         visca_responce = form_visca_command(visca_command_description)
