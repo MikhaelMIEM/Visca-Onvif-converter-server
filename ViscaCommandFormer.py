@@ -1,7 +1,17 @@
 def form_visca_command(description):
     def Ack():
-        z = description['z']
-        return b''.join([bytes([0x10 * z]), b'\x41\xFF'])
+        if 'z' in description:
+            z = description['z']
+            return b''.join([bytes([0x10 * z]), b'\x41\xFF'])
+        else:
+            raise KeyError('Unknown command description')
+
+    def Syntax_Error():
+        if 'z' in description:
+            z = description['z']
+            return b''.join([bytes([0x10 * z]), b'\x60\x02\xFF'])
+        else:
+            raise KeyError('Unknown command description')
 
     def Pan_tiltPosInq():
         if 'wwww' in description and 'zzzz' in description and 'y' in description:
@@ -52,6 +62,7 @@ def form_visca_command(description):
 
     DESCRIPTION_HANDLER_DEFINER = {
         'Ack': Ack,
+        'Syntax_Error': Syntax_Error,
         'Pan-tiltPosInq': Pan_tiltPosInq,
         'CAM_ZoomPosInq': CAM_ZoomPosInq,
         'CAM_FocusPosInq': CAM_FocusPosInq

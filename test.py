@@ -15,8 +15,8 @@ description = {'Command': 'Pan-tiltPosInq', 'wwww': b'\x12\x34', 'zzzz': 0x5678,
 description = {'Command': 'CAM_FocusPosInq', 'p': 1, 'q': 2, 'r': 3, 's': 4, 'y': 5}
 print(form_visca_command(description))
 
-addr = ('localhost', 1337)
-translator = Translator(addr)
+server_addr = ('localhost', 1337)
+translator = Translator(server_addr)
 
 translator.run_once()
 translator.run_once()
