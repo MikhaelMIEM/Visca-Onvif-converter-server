@@ -51,6 +51,8 @@ def classify_visca_command(message):
             function = 'Tele'
         elif args[2] // 0x10 == 0x03:
             function = 'Wide'
+        elif args[2] == 0:
+            function = 'Stop'
 
         classified_command = {'command': 'CAM_Zoom',
                               'function': function,

@@ -133,6 +133,9 @@ class OneCamCommandTranslator:
         print(pan, tilt)
 
     def __CAM_Zoom_handler(self, command, client_addr):
+        if command['function'] == 'Stop':
+            print('zoom stop')
+            return
         zoom = command['p'] / 7
         if command['function'] == 'Wide':
             zoom = -zoom
