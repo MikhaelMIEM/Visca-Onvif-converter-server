@@ -10,14 +10,13 @@ received_bytes = b'\x85\x09\x06\x12\xFF'  # Pan-tiltPosInq
 
 print(classify_visca_command(received_bytes))
 
-description = {'Command': 'Pan-tiltPosInq', 'x': 5}
-description = {'Command': 'Pan-tiltPosInq', 'wwww': b'\x12\x34', 'zzzz': 0x5678, 'y': 6}
-description = {'Command': 'CAM_FocusPosInq', 'p': 1, 'q': 2, 'r': 3, 's': 4, 'y': 5}
-print(form_visca_command(description))
+# description = {'Command': 'Pan-tiltPosInq', 'x': 5}
+# description = {'Command': 'Pan-tiltPosInq', 'wwww': b'\x12\x34', 'zzzz': 0x5678, 'y': 6}
+# description = {'Command': 'CAM_FocusPosInq', 'p': 1, 'q': 2, 'r': 3, 's': 4, 'y': 5}
+# print(form_visca_command(description))
 
-server_addr = ('localhost', 1337)
-translator = Translator(server_addr)
-
-translator.run_once()
-translator.run_once()
-translator.run_once()
+# server_addr = ('localhost', 1337)
+# translator = Translator(server_addr)
+#
+# while True:
+#     translator.run_once()

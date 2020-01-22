@@ -1,41 +1,27 @@
 def classify_visca_command(message):
-    UNNKNOWN_COMMAND = {'command': 'unknown'}
-
-    def is_message_CommandCancel():
-        return message[0] // 0x10 == 0x08 and message[1] == 0x21
-
     def is_message_control():
         return message[0] // 0x10 == 0x08 and message[1] == 0x01
 
     def is_message_inquiry():
         return message[0] // 0x10 == 0x08 and message[1] == 0x09
 
-    def handle_CommandCancel_message():
-        classified_command = {'command': 'CommandCancel'}
-        x = message[0] % 0x10
+    def handle_message(command_handler_definer):
+        command_indicator = message[2:4]
+        if command_indicator not in command_handler_definer:
+            return UNKNOWN_COMMAND
+        command_handler = command_handler_definer[command_indicator]
+        classified_command = command_handler()
         classified_command['x'] = x
         return classified_command
 
     def handle_control_message():
-        command_indicator = message[2:4]
-        try:
-            command_handler = CONTROL_COMMAND_HANDLER_DEFINER[command_indicator]
-        except KeyError:
-            return UNNKNOWN_COMMAND
-        classified_command = command_handler()
-        x = message[0] % 0x10
-        classified_command['x'] = x
-        return classified_command
+        return handle_message(CONTROL_COMMAND_HANDLER_DEFINER)
 
     def handle_inquiry_message():
-        command_indicator = message[2:4]
-        try:
-            command_handler = INQUIRY_COMMAND_HANDLER_DEFINER[command_indicator]
-        except KeyError:
-            return UNNKNOWN_COMMAND
-        classified_command = command_handler()
-        x = message[0] % 0x10
-        classified_command['x'] = x
+        return handle_message(INQUIRY_COMMAND_HANDLER_DEFINER)
+
+    def CommandCancel():
+        classified_command = {'command': 'CommandCancel'}
         return classified_command
 
     def Home():
@@ -83,7 +69,7 @@ def classify_visca_command(message):
 
             args = args[-3:]
             if args not in CONTINUOUS_MOVE_FUNCTION_DEFINER:
-                return UNNKNOWN_COMMAND
+                return UNKNOWN_COMMAND
 
             function = CONTINUOUS_MOVE_FUNCTION_DEFINER[args]
 
@@ -123,6 +109,7 @@ def classify_visca_command(message):
         return bytes([y[0] << 4 | y[1], y[2] << 4 | y[3]])
 
     CONTROL_COMMAND_HANDLER_DEFINER = {
+        b'': CommandCancel,
         b'\x06\x04': Home,
         b'\x04\x07': CAM_Zoom,
         b'\x06\x01': Pan_tiltDrive,
@@ -137,13 +124,18 @@ def classify_visca_command(message):
 
     if type(message) is not bytes:
         raise ValueError('Visca command classifier require message of bytes')
+
+    UNKNOWN_COMMAND = {'command': 'unknown'}
+
     if len(message) < 3:
-        return UNNKNOWN_COMMAND
-    if is_message_CommandCancel():
-        return handle_CommandCancel_message()
+        return UNKNOWN_COMMAND
+    else:
+        x = message[0] % 0x10
+        UNKNOWN_COMMAND['x'] = x
+
     if is_message_control():
         return handle_control_message()
     elif is_message_inquiry():
         return handle_inquiry_message()
     else:
-        return UNNKNOWN_COMMAND
+        return UNKNOWN_COMMAND
