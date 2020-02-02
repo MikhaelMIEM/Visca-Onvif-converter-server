@@ -2,38 +2,68 @@ from ViscaCommandClassificator import classify_visca_command
 from ViscaCommandFormer import form_visca_command
 from ONVIFCameraControl import ONVIFCameraControl
 import socket
+from select import select
 import logging
 
 logger = logging.getLogger(__name__)
 
 
 class OneCamCommandTranslator:
-    def __init__(self,  server_addr, cam_addr, cam_login, cam_password, preset_range={'min': 1, 'max': 20}):
-        logger.info(f'Initializing service {server_addr} -> {cam_addr}')
+    def __init__(self, visca_server_addr, onvif_cam_addr, onvif_cam_login, onvif_cam_password,
+                 preset_ranges_per_client, lock=None):
+        logger.info(f'Initializing service {visca_server_addr} -> {onvif_cam_addr}')
 
-        self.__server_addr = server_addr
+        self.__onvif_cam_addr = onvif_cam_addr
+        self.__visca_server_addr = visca_server_addr
         self.__visca_socket = self.__create_socket()
-        self.__preset_range = preset_range
-        self.__current_preset = self.__preset_range['min']
-        self.__cam = ONVIFCameraControl(cam_addr, cam_login, cam_password)
+        self.__monitored_socket = [self.__visca_socket]
+        self.__preset_ranges = preset_ranges_per_client
+        self.__current_preset = {}
+        self.__update_current_preset_ranges()
+        self.__cam = ONVIFCameraControl(onvif_cam_addr, onvif_cam_login, onvif_cam_password)
+        self.lock = lock
 
-        logger.info(f'Initializing service {server_addr} -> {cam_addr} complete')
-
+        logger.info(f'Initializing service {visca_server_addr} -> {onvif_cam_addr} complete')
 
     def __create_socket(self):
         logger.debug(f'Create socket')
 
         visca_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         visca_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        visca_socket.bind(self.__server_addr)
+        visca_socket.bind(self.__visca_server_addr)
 
         logger.debug(f'Socket created')
 
         return visca_socket
 
+    def __update_current_preset_ranges(self):
+        if self.lock is not None:
+            self.lock.acquire()
+
+        preset_ranges = self.__preset_ranges[self.__onvif_cam_addr]
+
+        for client, preset_range in preset_ranges:
+            if client not in self.__current_preset:
+                self.__current_preset[client] = preset_range['min']
+            elif not self.__is_preset_in_range(client):
+                self.__current_preset[client] = preset_range['min']
+
+        for client in list(self.__current_preset.items()):
+            if client not in preset_ranges:
+                self.__current_preset.pop(client)
+
+        if self.lock is not None:
+            self.lock.release()
+
     def run_once(self):
-        message, client_addr = self.__receive_visca_message()
-        self.__handle_byte_message(message, client_addr)
+        if self.__is_socket_ready():
+            message, client_addr = self.__receive_visca_message()
+            self.__update_current_preset_ranges()
+            self.__handle_byte_message(message, client_addr)
+
+    def __is_socket_ready(self):
+        ready_to_read_socket, _, _ = select(self.__monitored_socket, [], [])
+        return bool(ready_to_read_socket)
 
     def __receive_visca_message(self):
         data, client_addr = self.__visca_socket.recvfrom(16)
@@ -46,7 +76,7 @@ class OneCamCommandTranslator:
 
     def __handle_byte_message(self, message, client_addr):
         COMMAND_HANDLER_DEFINER = {
-            'unknown': self.__unknown_handler,
+            'unknown': self.__unknown_command_handler,
             'Pan-tiltPosInq': self.__Pan_tiltPosInq_handler,
             'CAM_ZoomPosInq': self.__CAM_ZoomPosInq_handler,
             'CAM_FocusPosInq': self.__CAM_FocusPosInq_handler,
@@ -60,7 +90,7 @@ class OneCamCommandTranslator:
         command_handler = COMMAND_HANDLER_DEFINER[command_name]
         command_handler(command, client_addr)
 
-    def __unknown_handler(self, command, client_addr):
+    def __unknown_command_handler(self, command, client_addr):
         logger.debug(f'Unknown command. Sending Syntax_Error to visca controller.')
         if 'x' in command:
             x = command['x']
@@ -78,10 +108,14 @@ class OneCamCommandTranslator:
         logger.debug(f'Handling Pan_tiltPosInq.')
         x = command['x']
         y = x + 8
-        self.__evaluate_current_preset()
+        if client_addr in self.__current_preset:
+            self.__evaluate_current_preset(client_addr)
+            current_preset = self.__current_preset[client_addr]
+        else:
+            current_preset = 0
         visca_command_description = {
             'Command': 'Pan-tiltPosInq',
-            'wwww': self.__current_preset,
+            'wwww': current_preset,
             'zzzz': 0,
             'y': y
         }
@@ -121,8 +155,9 @@ class OneCamCommandTranslator:
     def __Pan_tiltDrive_handler(self, command, client_addr):
         if command['function'] == 'AbsolutePosition':
             logger.debug(f'Handling Pan_tiltDrive AbsolutePosition (as Onvif goto_preset).')
-            preset_num = command['YYYY']
-            self.__cam.set_preset(preset_num)
+            if client_addr in self.__current_preset:
+                preset_num = command['YYYY']
+                self.__cam.set_preset(preset_num)
         elif command['function'] == 'Stop':
             logger.debug(f'Handling Pan_tiltDrive Stop (as Onvif stop).')
             self.__cam.stop()
@@ -148,10 +183,20 @@ class OneCamCommandTranslator:
         logger.debug(f'Handling Home (as Onvif go_home).')
         self.__cam.go_home()
 
-    def __evaluate_current_preset(self):
-        self.__current_preset += 1
-        if self.__current_preset > self.__preset_range['max'] or self.__current_preset < self.__preset_range['min']:
-            self.__current_preset = self.__preset_range['min']
+    def __evaluate_current_preset(self, client_addr):
+        if self.lock is not None:
+            self.lock.acquire()
+
+        self.__current_preset[client_addr] += 1
+        if not self.__is_preset_in_range(client_addr):
+            self.__current_preset[client_addr] = self.__preset_ranges[self.__onvif_cam_addr][client_addr]['min']
+
+        if self.lock is not None:
+            self.lock.release()
+
+    def __is_preset_in_range(self, client_addr):
+        preset_range = self.__preset_ranges[self.__onvif_cam_addr][client_addr]
+        return preset_range['max'] >= self.__current_preset[client_addr] >= preset_range['min']
 
     def __get_pan_tilt_velocities_for_move_continuous(self, command):
         pan_velocity = command['VV'] / 0x18
