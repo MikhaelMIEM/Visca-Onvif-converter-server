@@ -45,7 +45,7 @@ class OneCamCommandTranslator:
             if self.lock is not None:
                 self.lock.acquire()
 
-            cams = deepcopy(self.__cam_storage.get_all())
+            cams = self.__cam_storage.get_all()
 
             if self.lock is not None:
                 self.lock.release()

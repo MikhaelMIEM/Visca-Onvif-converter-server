@@ -6,6 +6,8 @@ from time import sleep
 from copy import deepcopy
 from onvif import ONVIFError
 from json import JSONDecodeError
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 
 logger = logging.getLogger()
@@ -14,7 +16,14 @@ logger = logging.getLogger()
 lock = Lock()
 preset_ranges = {}
 thread_pool = {}
-refresh_every_sec = 3
+refresh_every_sec = 10
+
+#Google sheets vars
+scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+creds = ServiceAccountCredentials.from_json_keyfile_name("resources-parser.json", scope)
+client = gspread.authorize(creds)
+spreadsheet = client.open("visca_onvif_converter_config")
 
 
 class TranslatorThread(Thread):
@@ -39,20 +48,20 @@ class TranslatorThread(Thread):
 
 
 class CamStorage:
-    def __init__(self, cams):
-        self.cams = cams
+    def __init__(self, cams={}):
+        self.cams = deepcopy(cams)
 
     def get_all(self):
-        return self.cams
+        return deepcopy(self.cams)
 
     def set_cams(self, cams):
-        self.cams = cams
+        self.cams = deepcopy(cams)
 
 
 def clear_dead_threads():
     for thread in list(thread_pool.keys()):
-            if not thread_pool[thread].is_alive():
-                thread_pool.pop(thread)
+        if not thread_pool[thread].is_alive():
+            thread_pool.pop(thread)
 
 
 def read_config():
@@ -80,11 +89,36 @@ def read_config():
     return cams
 
 
+def read_google_sheets_config():
+    i = 0
+    cams = {}
+    while True:
+        worksheet = spreadsheet.get_worksheet(i)
+        try:
+            data = worksheet.get_all_values()
+        except AttributeError:
+            break
+        ip = data[1][0]
+        port = int(data[1][1])
+        addr = (ip, port)
+        cam = {"onvif_cam_login": data[1][2], "onvif_cam_password": data[1][3], "visca_server_port": int(data[1][4]),
+               "preset_client_range": {}}
+        preset_range = cam["preset_client_range"]
+        for line in data[4:]:
+            preset_range[line[0]] = {}
+            prange = preset_range[line[0]]
+            prange['min'] = int(line[1])
+            prange['max'] = int(line[2])
+        cams[addr] = cam
+        i += 1
+    return cams
+
+
 def is_params_changed(translator, cam, new_onvif_cam_addr):
-    return not (translator.onvif_cam_addr == new_onvif_cam_addr and \
-           translator.visca_server_port == cam['visca_server_port'] and \
-           translator.onvif_cam_login == cam['onvif_cam_login'] and \
-           translator.onvif_cam_password == cam['onvif_cam_password'])
+    return not (translator.onvif_cam_addr == new_onvif_cam_addr and
+                translator.visca_server_port == cam['visca_server_port'] and
+                translator.onvif_cam_login == cam['onvif_cam_login'] and
+                translator.onvif_cam_password == cam['onvif_cam_password'])
 
 
 def refresh_threads(cams):
@@ -105,16 +139,20 @@ def refresh_threads(cams):
 
 
 if __name__ == '__main__':
-    cam_storage = CamStorage({})
+    cam_storage = CamStorage()
 
     while True:
         clear_dead_threads()
+        try:
+            cams = read_google_sheets_config()
+        except Exception:
+            cams = {}
 
         lock.acquire()
-        cam_storage.set_cams(read_config())
-        cams = deepcopy(cam_storage.get_all())
+        cam_storage.set_cams(cams)
         lock.release()
 
         refresh_threads(cams)
-
         sleep(refresh_every_sec)
+
+

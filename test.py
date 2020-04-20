@@ -27,17 +27,33 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
-scope = ["https://spreadsheets.google.com/feeds",'https://www.googleapis.com/auth/spreadsheets',"https://www.googleapis.com/auth/drive.file","https://www.googleapis.com/auth/drive"]
+scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
 
 creds = ServiceAccountCredentials.from_json_keyfile_name("resources-parser.json", scope)
 
 client = gspread.authorize(creds)
-table = client.open("visca_onvif_converter_config")
+spreadsheet = client.open("visca_onvif_converter_config")
 
-sheet = table.get_worksheet(1)  # Open the spreadhseet
+i = 0
+cams = {}
+while True:
+    worksheet = spreadsheet.get_worksheet(i)
+    try:
+        data = worksheet.get_all_values()
+    except AttributeError:
+        break
+    ip = data[1][0]
+    port = int(data[1][1])
+    addr = (ip, port)
+    cam = {"onvif_cam_login": data[1][2], "onvif_cam_password": data[1][3], "visca_server_port": int(data[1][4]),
+           "preset_client_range": {}}
+    preset_range = cam["preset_client_range"]
+    for line in data[4:]:
+        preset_range[line[0]] = {}
+        prange = preset_range[line[0]]
+        prange['min'] = int(line[1])
+        prange['max'] = int(line[2])
+    cams[addr] = cam
+    i += 1
 
-print(table.worksheets())
-
-data = sheet.get_all_records()  # Get a list of all records
-
-print(data)
