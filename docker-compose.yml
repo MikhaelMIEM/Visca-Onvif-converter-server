@@ -1,0 +1,7 @@
+version: '3'
+
+services:
+        converter:
+                build: ./
+                command: python3.8 main.py
+                restart: always

@@ -4,7 +4,6 @@ from ONVIFCameraControl import ONVIFCameraControl
 import socket
 from select import select
 import logging
-from copy import deepcopy
 
 logger = logging.getLogger(__name__)
 
