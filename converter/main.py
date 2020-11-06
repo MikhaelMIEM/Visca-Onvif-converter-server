@@ -1,5 +1,5 @@
 from threading import Thread, Lock
-from OneCamCommandTranslator import OneCamCommandTranslator as Translator
+from .CamCommandTranslator import CamCommandTranslator as Translator
 import logging
 import json
 from time import sleep
@@ -130,7 +130,7 @@ def refresh_threads(cams):
             try:
                 thread_pool[onvif_cam_addr] = TranslatorThread(visca_port, onvif_cam_addr, login, password,
                                                                cam_storage)
-            except ONVIFError as e:
+            except Exception as e:
                 logger.error('Check config params.' + str(e))
                 continue
             thread_pool[onvif_cam_addr].start()
@@ -154,5 +154,3 @@ if __name__ == '__main__':
 
         refresh_threads(cams)
         sleep(refresh_every_sec)
-
-

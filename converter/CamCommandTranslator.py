@@ -1,6 +1,6 @@
-from ViscaCommandClassificator import classify_visca_command
-from ViscaCommandFormer import form_visca_command
-from ONVIFCameraControl import ONVIFCameraControl
+from .ViscaCommandClassificator import classify_visca_command
+from .ViscaCommandFormer import form_visca_command
+from .ONVIFCameraControl import ONVIFCameraControl
 import socket
 from select import select
 import logging
@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class OneCamCommandTranslator:
+class CamCommandTranslator:
     def __init__(self, visca_server_port, onvif_cam_addr, onvif_cam_login, onvif_cam_password,
                  cam_storage, lock=None):
         logger.info(f'Initializing service 0.0.0.0:{visca_server_port} -> {onvif_cam_addr}')

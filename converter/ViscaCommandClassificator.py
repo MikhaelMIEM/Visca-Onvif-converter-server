@@ -122,10 +122,10 @@ def classify_visca_command(message):
         b'\x04\x47': CAM_ZoomPosInq
     }
 
+    UNKNOWN_COMMAND = {'command': 'unknown'}
+
     if type(message) is not bytes:
         raise ValueError('Visca command classifier require message of bytes')
-
-    UNKNOWN_COMMAND = {'command': 'unknown'}
 
     if len(message) < 3:
         return UNKNOWN_COMMAND

@@ -1,6 +1,5 @@
 FROM python:3.8-alpine
 ENV PYTHONUNBUFFERED 1
-RUN apk add --update --no-cache g++ gcc libxslt-dev
-RUN python -m pip install ONVIFCameraControl gspread oauth2client
+RUN apk add --update --no-cache g++ gcc libxslt-dev && python -m pip install gspread oauth2client onvif_zeep
 COPY ./converter /converter
 WORKDIR /converter
