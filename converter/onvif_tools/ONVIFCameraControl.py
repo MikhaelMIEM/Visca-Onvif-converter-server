@@ -21,7 +21,7 @@ ONVIFCameraControlError = ONVIFError
 class ONVIFCameraControl:
     def __init__(self, addr, login, password):
         self.__check_addr(addr)
-        logger.info(f'Initializing camera {addr}')
+        logger.debug(f'Initializing camera {addr}')
 
         self.__cam = ONVIFCamera(addr[0], addr[1], login, password)
 
@@ -47,7 +47,7 @@ class ONVIFCameraControl:
         RTP over RTSP over HTTP over TCP: StreamType = "RTP_Unicast", TransportProtocol = "HTTP"
         RTP over RTSP over TCP: StreamType = "RTP_Unicast", TransportProtocol = "RTSP"
         """
-        logger.info(f'Getting stream uri {protocol} {stream}')
+        logger.debug(f'Getting stream uri {protocol} {stream}')
         request = self.__media_service.create_type('GetStreamUri')
         request.ProfileToken = self.__profile.token
         request.StreamSetup = {'Stream': stream, 'Transport': {'Protocol': protocol}}
@@ -58,7 +58,7 @@ class ONVIFCameraControl:
         :param brightness:
             float in range [0, 100]
         """
-        logger.info(f'Settings brightness')
+        logger.debug(f'Settings brightness')
         imaging_settings = self.__get_imaging_settings()
         imaging_settings.Brightness = brightness
         self.__set_imaging_settings(imaging_settings)
@@ -68,7 +68,7 @@ class ONVIFCameraControl:
         :param color_saturation:
             float in range [0, 100]
         """
-        logger.info(f'Settings color_saturation')
+        logger.debug(f'Settings color_saturation')
         imaging_settings = self.__get_imaging_settings()
         imaging_settings.ColorSaturation = color_saturation
         self.__set_imaging_settings(imaging_settings)
@@ -78,7 +78,7 @@ class ONVIFCameraControl:
         :param contrast:
             float in range [0, 100]
         """
-        logger.info(f'Settings contrast')
+        logger.debug(f'Settings contrast')
         imaging_settings = self.__get_imaging_settings()
         imaging_settings.Contrast = contrast
         self.__set_imaging_settings(imaging_settings)
@@ -88,7 +88,7 @@ class ONVIFCameraControl:
         :param sharpness:
             float in range [0, 100]
         """
-        logger.info(f'Settings sharpness')
+        logger.debug(f'Settings sharpness')
         imaging_settings = self.__get_imaging_settings()
         imaging_settings.Sharpness = sharpness
         self.__set_imaging_settings(imaging_settings)
@@ -98,7 +98,7 @@ class ONVIFCameraControl:
         :param mode:
             string, can be either 'AUTO' or 'MANUAL'
         """
-        logger.info(f'Settings focus mode')
+        logger.debug(f'Settings focus mode')
         imaging_settings = self.__get_imaging_settings()
         imaging_settings.Focus.AutoFocusMode = mode
         self.__set_imaging_settings(imaging_settings)
@@ -108,7 +108,7 @@ class ONVIFCameraControl:
         :param speed:
             float in range [-1,1]
         """
-        logger.info(f'Doing move focus continuous')
+        logger.debug(f'Doing move focus continuous')
         request = self.__imaging_service.create_type('Move')
         request.VideoSourceToken = self.__video_source.token
         request.Focus = self.__get_move_options()
@@ -122,7 +122,7 @@ class ONVIFCameraControl:
         :param speed:
             float in range [0,1]
         """
-        logger.info(f'Doing move focus absolute')
+        logger.debug(f'Doing move focus absolute')
         request = self.__imaging_service.create_type('Move')
         request.VideoSourceToken = self.__video_source.token
         request.Focus = self.__get_move_options()
@@ -131,7 +131,7 @@ class ONVIFCameraControl:
         self.__imaging_service.Move(request)
 
     def stop_focus(self):
-        logger.info(f'Stoping focus')
+        logger.debug(f'Stoping focus')
         self.__imaging_service.Stop(self.__video_source.token)
 
     def set_preset(self, preset_token=None, preset_name=None):
@@ -142,7 +142,7 @@ class ONVIFCameraControl:
             string
             if None then duplicate preset_token
         """
-        logger.info(f'Setting preset {preset_token} ({preset_name})')
+        logger.debug(f'Setting preset {preset_token} ({preset_name})')
         request = self.__ptz_service.create_type('SetPreset')
         request.ProfileToken = self.__profile.token
         request.PresetToken = preset_token
@@ -157,7 +157,7 @@ class ONVIFCameraControl:
             tuple (pan,tilt,zoom) where
             pan tilt and zoom in range [0,1]
         """
-        logger.info(f'Moving to preset {preset_token}, speed={ptz_velocity}')
+        logger.debug(f'Moving to preset {preset_token}, speed={ptz_velocity}')
         request = self.__ptz_service.create_type('GotoPreset')
         request.ProfileToken = self.__profile.token
         request.PresetToken = preset_token
@@ -172,22 +172,22 @@ class ONVIFCameraControl:
         return self.__ptz_service.GetPresets(self.__profile.token)
 
     def get_brightness(self):
-        logger.info(f'Getting brightness')
+        logger.debug(f'Getting brightness')
         imaging_settings = self.__get_imaging_settings()
         return imaging_settings.Brightness
 
     def get_color_saturation(self):
-        logger.info(f'Getting color_saturation')
+        logger.debug(f'Getting color_saturation')
         imaging_settings = self.__get_imaging_settings()
         return imaging_settings.ColorSaturation
 
     def get_contrast(self):
-        logger.info(f'Getting contrast')
+        logger.debug(f'Getting contrast')
         imaging_settings = self.__get_imaging_settings()
         return imaging_settings.Contrast
 
     def get_sharpness(self):
-        logger.info(f'Getting sharpness')
+        logger.debug(f'Getting sharpness')
         imaging_settings = self.__get_imaging_settings()
         return imaging_settings.Sharpness
 
@@ -197,7 +197,7 @@ class ONVIFCameraControl:
             tuple (pan,tilt,zoom) where
             pan tilt and zoom in range [-1,1]
         """
-        logger.info(f'Continuous move {ptz_velocity} {"" if timeout is None else " for " + str(timeout)}')
+        logger.debug(f'Continuous move {ptz_velocity} {"" if timeout is None else " for " + str(timeout)}')
         req = self.__ptz_service.create_type('ContinuousMove')
         req.Velocity = self.__status.Position
         req.ProfileToken = self.__profile.token
@@ -214,7 +214,7 @@ class ONVIFCameraControl:
         self.__ptz_service.ContinuousMove(req)
 
     def move_absolute(self, ptz_position, ptz_velocity=(1.0, 1.0, 1.0)):
-        logger.info(f'Absolute move {ptz_position}')
+        logger.debug(f'Absolute move {ptz_position}')
         req = self.__ptz_service.create_type['AbsoluteMove']
         req.ProfileToken = self.__profile.token
         pos = req.Position
@@ -226,7 +226,7 @@ class ONVIFCameraControl:
         self.__ptz_service.AbsoluteMove(req)
 
     def move_relative(self, ptz_position, ptz_velocity=(1.0, 1.0, 1.0)):
-        logger.info(f'Relative move {ptz_position}')
+        logger.debug(f'Relative move {ptz_position}')
         req = self.__ptz_service.create_type['RelativeMove']
         req.ProfileToken = self.__profile.token
         pos = req.Translation
@@ -238,13 +238,13 @@ class ONVIFCameraControl:
         self.__ptz_service.RelativeMove(req)
 
     def go_home(self):
-        logger.info(f'Moving home')
+        logger.debug(f'Moving home')
         req = self.__ptz_service.create_type('GotoHomePosition')
         req.ProfileToken = self.__profile.token
         self.__ptz_service.GotoHomePosition(req)
 
     def stop(self):
-        logger.info(f'Stopping movement')
+        logger.debug(f'Stopping movement')
         self.__ptz_service.Stop({'ProfileToken': self.__profile.token})
 
     def __get_move_options(self):
