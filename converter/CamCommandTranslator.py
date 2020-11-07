@@ -1,6 +1,6 @@
-from .ViscaCommandClassificator import classify_visca_command
-from .ViscaCommandFormer import form_visca_command
-from .ONVIFCameraControl import ONVIFCameraControl
+from converter.visca_tools.ViscaCommandClassificator import classify_visca_command
+from converter.visca_tools.ViscaCommandFormer import form_visca_command
+from converter.onvif_tools.ONVIFCameraControl import ONVIFCameraControl
 import socket
 from select import select
 import logging
@@ -224,3 +224,7 @@ class CamCommandTranslator:
             pan_velocity = -pan_velocity
             tilt_velocity = -tilt_velocity
         return pan_velocity, tilt_velocity
+
+    @property
+    def visca_port(self):
+        return self.__visca_server_port

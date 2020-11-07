@@ -1,50 +1,32 @@
-from threading import Thread, Lock
-from .CamCommandTranslator import CamCommandTranslator as Translator
 import logging
-import json
+import argparse
+from threading import Thread, Lock
 from time import sleep
+from datetime import datetime
 from copy import deepcopy
 from onvif import ONVIFError
-from json import JSONDecodeError
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+
+from converter.CamCommandTranslator import CamCommandTranslator as Translator
+from converter.CamsParser import GoogleSheetsCamsParser, read_config
+from converter.LoggingTools import init_logger
 
 
-logger = logging.getLogger()
-#logger.setLevel(logging.DEBUG)
-
+logger = logging.getLogger('Server')
 lock = Lock()
-preset_ranges = {}
 thread_pool = {}
-refresh_every_sec = 10
-
-#Google sheets vars
-scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
-         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("resources-parser.json", scope)
-client = gspread.authorize(creds)
-spreadsheet = client.open("visca_onvif_converter_config")
+refresh_every_sec = 20
 
 
-class TranslatorThread(Thread):
-    def __init__(self, visca_server_port, onvif_cam_addr, onvif_cam_login, onvif_cam_password,
-                       cam_storage, lock=None):
-        Thread.__init__(self)
-        self.need_refresh = False
-        self.onvif_cam_addr = onvif_cam_addr
-        self.visca_server_port = visca_server_port
-        self.onvif_cam_login = onvif_cam_login
-        self.onvif_cam_password = onvif_cam_password
-        self.cam_storage = cam_storage
-        self.translator = Translator(visca_server_port, onvif_cam_addr, onvif_cam_login, onvif_cam_password,
-                                cam_storage, lock)
-
-    def run(self):
-        while self.onvif_cam_addr in self.cam_storage.get_all() and not self.need_refresh:
-            try:
-                self.translator.run_once()
-            except ONVIFError as e:
-                logger.error(e)
+def get_arguments():
+    parser = argparse.ArgumentParser(description="Visca to Onvif command converter")
+    parser.add_argument("--use-google", help="Enable google spreadsheet cams fetching", action="store_true")
+    parser.add_argument("--json-keyfile", metavar="PATH", help="Google api json creds")
+    parser.add_argument("--spreadsheet", metavar="STRING_NAME", help="Google spreadsheet name")
+    parser.add_argument("--conf", metavar="PATH", help="Config file path")
+    parser.add_argument("--logfile", metavar="PATH", help="Logfile path",
+                        default=f"log-{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.txt")
+    parser.add_argument("--debug", "-d", help="Show console debug messages", action="store_true")
+    return parser.parse_args()
 
 
 class CamStorage:
@@ -58,60 +40,58 @@ class CamStorage:
         self.cams = deepcopy(cams)
 
 
+class TranslatorThread(Thread):
+    def __init__(self, visca_server_port, onvif_cam_addr, onvif_cam_login, onvif_cam_password,
+                       cam_storage, lock=None):
+        Thread.__init__(self)
+        self.stop = False
+        self.onvif_cam_addr = onvif_cam_addr
+        self.visca_server_port = visca_server_port
+        self.onvif_cam_login = onvif_cam_login
+        self.onvif_cam_password = onvif_cam_password
+        self.cam_storage = cam_storage
+        self.translator = Translator(visca_server_port, onvif_cam_addr, onvif_cam_login, onvif_cam_password,
+                                cam_storage, lock)
+
+    def run(self):
+        while self.onvif_cam_addr in self.cam_storage.get_all() and not self.stop:
+            try:
+                self.translator.run_once()
+            except ONVIFError as e:
+                logger.error(e)
+
+
+def start_new_threads(cams):
+    for onvif_cam_addr in cams:
+        if onvif_cam_addr not in thread_pool:
+            visca_port = cams[onvif_cam_addr]["visca_server_port"]
+            login = cams[onvif_cam_addr]["onvif_cam_login"]
+            password = cams[onvif_cam_addr]["onvif_cam_password"]
+            used_ports = [thread.translator.visca_port for thread in thread_pool.values()]
+            if visca_port in used_ports:
+                logger.error(f'Port "{visca_port}" is already used. '
+                             f'Please define another port in config for {onvif_cam_addr}')
+                continue
+            try:
+                thread_pool[onvif_cam_addr] = TranslatorThread(visca_port, onvif_cam_addr, login, password,
+                                                               cam_storage)
+            except Exception as e:
+                logger.error('Check config params.' + str(e))
+                continue
+            thread_pool[onvif_cam_addr].start()
+
+
 def clear_dead_threads():
     for thread in list(thread_pool.keys()):
         if not thread_pool[thread].is_alive():
             thread_pool.pop(thread)
 
 
-def read_config():
-    try:
-        with open('visca_onvif_config.txt') as config:
-            data = json.load(config)
-    except JSONDecodeError as e:
-        logger.error(f'Wrong config format. Check json syntax.' + str(e))
-        data = {"cams": {}}
-        
-    cams = {}
-
-    try:
-        for cam in data["cams"]:
-                cam_addr = (cam["cam_ip"], cam["cam_port"])
-                cams[cam_addr] = {}
-                cams[cam_addr]["preset_client_range"] = cam["preset_client_range"]
-                cams[cam_addr]["visca_server_port"] = cam["visca_server_port"]
-                cams[cam_addr]["onvif_cam_login"] = cam["cam_login"]
-                cams[cam_addr]["onvif_cam_password"] = cam["cam_password"]
-    except KeyError as e:
-        cams = {}
-        logger.error(f'Wrong config format.' + str(e))
-
-    return cams
-
-
-def read_google_sheets_config():
-    i = 0
-    cams = {}
-    while True:
-        worksheet = spreadsheet.get_worksheet(i)
-        try:
-            data = worksheet.get_all_values()
-        except AttributeError:
-            break
-        ip = data[1][0]
-        port = int(data[1][1])
-        addr = (ip, port)
-        cam = {"onvif_cam_login": data[1][2], "onvif_cam_password": data[1][3], "visca_server_port": int(data[1][4]),
-               "preset_client_range": {}}
-        preset_range = cam["preset_client_range"]
-        for line in data[4:]:
-            preset_range[line[0]] = {}
-            prange = preset_range[line[0]]
-            prange['min'] = int(line[1])
-            prange['max'] = int(line[2])
-        cams[addr] = cam
-        i += 1
-    return cams
+def stop_altered_threads(cams):
+    for onvif_cam_addr in cams:
+        if onvif_cam_addr in thread_pool\
+                and is_params_changed(thread_pool[onvif_cam_addr], cams[onvif_cam_addr], onvif_cam_addr):
+            thread_pool[onvif_cam_addr].stop = True
 
 
 def is_params_changed(translator, cam, new_onvif_cam_addr):
@@ -121,36 +101,51 @@ def is_params_changed(translator, cam, new_onvif_cam_addr):
                 translator.onvif_cam_password == cam['onvif_cam_password'])
 
 
-def refresh_threads(cams):
-    for onvif_cam_addr in cams:
-        if onvif_cam_addr not in thread_pool:
-            visca_port = cams[onvif_cam_addr]["visca_server_port"]
-            login = cams[onvif_cam_addr]["onvif_cam_login"]
-            password = cams[onvif_cam_addr]["onvif_cam_password"]
-            try:
-                thread_pool[onvif_cam_addr] = TranslatorThread(visca_port, onvif_cam_addr, login, password,
-                                                               cam_storage)
-            except Exception as e:
-                logger.error('Check config params.' + str(e))
-                continue
-            thread_pool[onvif_cam_addr].start()
-        elif is_params_changed(thread_pool[onvif_cam_addr], cams[onvif_cam_addr], onvif_cam_addr):
-            thread_pool[onvif_cam_addr].need_refresh = True
-
-
 if __name__ == '__main__':
+    args = get_arguments()
+    init_logger(args.logfile, debug=args.debug)
     cam_storage = CamStorage()
+    google_sheet = None
+
+    logger.info(
+        "Visca to Onvif converter has been started. "
+        + ('Google sheets' if args.use_google else "File")
+        + " config is chosen"
+    )
+
+    try:
+        if args.use_google:
+            if not args.json_keyfile:
+                logger.error('Exit. No google api json keyfile specified')
+                exit(1)
+            elif not args.spreadsheet:
+                logger.error('Exit. No google spreadsheet name specified')
+                exit(1)
+            else:
+                google_sheet = GoogleSheetsCamsParser(args.json_keyfile, args.spreadsheet)
+        elif not args.conf:
+            logger.error('Exit. No cameras json config defined')
+            exit(1)
+    except Exception as e:
+        logger.error("Exit. Cannot connect to google sheet with current parameters. " + str(e))
+        exit(1)
 
     while True:
-        clear_dead_threads()
         try:
-            cams = read_google_sheets_config()
-        except Exception:
+            if args.use_google:
+                cams = google_sheet.read_config()
+            else:
+                cams = read_config(args.conf)
+        except Exception as e:
+            logger.error('Error occur during cams fetching. ' + str(e))
             cams = {}
 
         lock.acquire()
         cam_storage.set_cams(cams)
         lock.release()
 
-        refresh_threads(cams)
+        stop_altered_threads(cams)
+        clear_dead_threads()
+        start_new_threads(cams)
+
         sleep(refresh_every_sec)
