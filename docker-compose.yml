@@ -2,6 +2,19 @@ version: '3'
 
 services:
     converter:
-        build: ./
-        command: python3.8 main.py
+        ports:
+            - "10000-65535:10000-65535"
+        volumes:
+            - ./{LOGFILE}:{LOGFILE}
+        build: ./converter
+        command: python3 main.py --use-google --json-keyfile ${JSON_KEYFILE} --spreadsheet ${SPREADSHEET_NAME} --logdir ${LOGDIR}
+        restart: always
+
+    logs_serving:
+        ports:
+            - "80:80"
+        volumes:
+            - ./{LOGFILE}:{LOGFILE}
+        build: ./logs_serving
+        command: python3 -m http.server 80 --directory ${LOGDIR}
         restart: always

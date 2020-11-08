@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class GoogleSheetsCamsParser:
-    def __init__(self, json_keyfile="resources-parser.json", spreadsheet_name="visca_onvif_converter_config"):
+    def __init__(self, json_keyfile, spreadsheet_name):
         scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
                  "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
         creds = ServiceAccountCredentials.from_json_keyfile_name(json_keyfile, scope)

@@ -1,14 +1,20 @@
 import logging
+from logging.handlers import TimedRotatingFileHandler
+from pathlib import Path
 
 
-def init_logger(logfile, debug=False):
+def init_logger(logdir='./logs', debug=False):
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
     for handler in logger.handlers:
         logger.removeHandler(handler)
 
-    file_handler = logging.FileHandler(logfile)
+    logdir = Path(logdir)
+    logdir.mkdir(exist_ok=True)
+    logfile = logdir / 'logfile'
+
+    file_handler = TimedRotatingFileHandler(filename=str(logfile), when='D', interval=1, backupCount=14, delay=False)
     console_handler = logging.StreamHandler()
 
     file_log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

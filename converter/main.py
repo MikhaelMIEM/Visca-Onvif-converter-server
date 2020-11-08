@@ -2,7 +2,6 @@ import logging
 import argparse
 from threading import Thread, Lock
 from time import sleep
-from datetime import datetime
 from copy import deepcopy
 from onvif import ONVIFError
 
@@ -14,7 +13,7 @@ from converter.LoggingTools import init_logger
 logger = logging.getLogger('Server')
 lock = Lock()
 thread_pool = {}
-refresh_every_sec = 20
+refresh_every_sec = 34
 
 
 def get_arguments():
@@ -23,8 +22,8 @@ def get_arguments():
     parser.add_argument("--json-keyfile", metavar="PATH", help="Google api json creds")
     parser.add_argument("--spreadsheet", metavar="STRING_NAME", help="Google spreadsheet name")
     parser.add_argument("--conf", metavar="PATH", help="Config file path")
-    parser.add_argument("--logfile", metavar="PATH", help="Logfile path",
-                        default=f"log-{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.txt")
+    parser.add_argument("--logdir", metavar="DIRECTORY", help="Directory to store log files",
+                        default='./logs')
     parser.add_argument("--debug", "-d", help="Show console debug messages", action="store_true")
     return parser.parse_args()
 
@@ -79,6 +78,9 @@ def start_new_threads(cams):
                 logger.error('Check config params.' + str(e))
                 continue
             thread_pool[onvif_cam_addr].start()
+            if len(thread_pool) == 20:
+                logger.warning('It is not recommended to use more than 20 cams due to Google api requests quotas. '
+                               'If you are using file config, it is ok =)')
 
 
 def clear_dead_threads():
@@ -103,7 +105,7 @@ def is_params_changed(translator, cam, new_onvif_cam_addr):
 
 if __name__ == '__main__':
     args = get_arguments()
-    init_logger(args.logfile, debug=args.debug)
+    init_logger(args.logdir, debug=args.debug)
     cam_storage = CamStorage()
     google_sheet = None
 
