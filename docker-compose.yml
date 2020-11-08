@@ -5,7 +5,7 @@ services:
         ports:
             - "10000-65535:10000-65535"
         volumes:
-            - ${LOGDIR}:/${LOGDIR}
+            - ./${LOGDIR}:/${LOGDIR}
         build: ./converter
         command: python3 main.py --use-google --json-keyfile ${JSON_KEYFILE} --spreadsheet ${SPREADSHEET_NAME} --logdir ${LOGDIR}
         restart: always
@@ -14,7 +14,7 @@ services:
         ports:
             - "80:80"
         volumes:
-            - ${LOGDIR}:/${LOGDIR}
+            - ./${LOGDIR}:/${LOGDIR}
         build: ./logs_serving
         command: python3 -m http.server 80 --directory ${LOGDIR}
         restart: always
