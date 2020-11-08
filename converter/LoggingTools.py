@@ -12,12 +12,12 @@ def init_logger(logdir='./logs', debug=False):
 
     logdir = Path(logdir)
     logdir.mkdir(exist_ok=True)
-    logfile = logdir / 'logfile'
+    logfile = logdir / 'index.html'
 
     file_handler = TimedRotatingFileHandler(filename=str(logfile), when='D', interval=1, backupCount=14, delay=False)
     console_handler = logging.StreamHandler()
 
-    file_log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    file_log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s <br>'
     console_log_format = '%(asctime)s - %(message)s'
     file_formatter = logging.Formatter(file_log_format)
     console_formatter = logging.Formatter(console_log_format)
