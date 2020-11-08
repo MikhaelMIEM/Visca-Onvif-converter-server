@@ -67,7 +67,7 @@ def start_new_threads(cams):
             visca_port = cams[onvif_cam_addr]["visca_server_port"]
             login = cams[onvif_cam_addr]["onvif_cam_login"]
             password = cams[onvif_cam_addr]["onvif_cam_password"]
-            used_ports = [thread.translator.visca_port for thread in thread_pool.values()]
+            used_ports = {thread.translator.visca_port for thread in thread_pool.values()}
             if visca_port in used_ports:
                 logger.error(f'Port "{visca_port}" is already used. '
                              f'Please define another port in config for {onvif_cam_addr}')

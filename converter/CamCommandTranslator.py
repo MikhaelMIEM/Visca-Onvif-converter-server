@@ -175,7 +175,7 @@ class CamCommandTranslator:
     def __Pan_tiltDrive_handler(self, command, client_addr):
         if command['function'] == 'AbsolutePosition':
             logger.debug(f'Handling Pan_tiltDrive AbsolutePosition (as Onvif goto_preset).')
-            preset_num = command['YYYY']
+            preset_num = int.from_bytes(command['YYYY'], 'big')
             self.__cam.goto_preset(preset_num)
         elif command['function'] == 'Stop':
             logger.debug(f'Handling Pan_tiltDrive Stop (as Onvif stop).')
@@ -190,7 +190,7 @@ class CamCommandTranslator:
         if command['function'] == 'Stop':
             logger.debug(f'Handling Zoom Stop (as Onvif stop).')
             self.__cam.stop()
-        else:
+        elif command['function'] == 'Tele' or command['function'] == 'Wide':
             logger.debug(f'Handling Zoom (as Onvif move_continuous).')
             zoom_velocity = command['p'] / 7
             if command['function'] == 'Wide':

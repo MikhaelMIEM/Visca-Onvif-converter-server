@@ -31,18 +31,32 @@ def classify_visca_command(message):
 
     def CAM_Zoom():
         args = message[2:-1]
-        p = args[2] % 0x10
+        command_indicator = args[0:2]
+        if command_indicator == b'\x04\x47':
+            p = args[2] // 0x10
+            q = args[3] // 0x10
+            r = args[4] // 0x10
+            s = args[5] // 0x10
 
-        if args[2] // 0x10 == 0x02:
-            function = 'Tele'
-        elif args[2] // 0x10 == 0x03:
-            function = 'Wide'
-        elif args[2] == 0:
-            function = 'Stop'
+            classified_command = {'command': 'CAM_Zoom',
+                                  'function': 'Direct',
+                                  'p': p,
+                                  'q': q,
+                                  'r': r,
+                                  's': s}
+        else:
+            p = args[2] % 0x10
 
-        classified_command = {'command': 'CAM_Zoom',
-                              'function': function,
-                              'p': p}
+            if args[2] // 0x10 == 0x02:
+                function = 'Tele'
+            elif args[2] // 0x10 == 0x03:
+                function = 'Wide'
+            elif args[2] == 0:
+                function = 'Stop'
+
+            classified_command = {'command': 'CAM_Zoom',
+                                  'function': function,
+                                  'p': p}
         return classified_command
 
     def Pan_tiltDrive():
@@ -112,6 +126,7 @@ def classify_visca_command(message):
         b'': CommandCancel,
         b'\x06\x04': Home,
         b'\x04\x07': CAM_Zoom,
+        b'\x04\x47': CAM_Zoom,
         b'\x06\x01': Pan_tiltDrive,
         b'\x06\x02': Pan_tiltDrive
     }
