@@ -16,5 +16,5 @@ services:
         volumes:
             - ./${LOGDIR}:/${LOGDIR}
         build: ./logs_serving
-        command: python3 -m http.server 80 --directory ${LOGDIR}
+        command: python3 -m http.server ${LOGGER_PORT} --directory ${LOGDIR}
         restart: always

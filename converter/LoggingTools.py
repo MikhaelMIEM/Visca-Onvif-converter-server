@@ -17,9 +17,9 @@ def init_logger(logdir='./logs', debug=False):
     file_handler = TimedRotatingFileHandler(filename=str(logfile), when='D', interval=1, backupCount=14, delay=False)
     console_handler = logging.StreamHandler()
 
-    file_log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s <br>'
+    file_log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     console_log_format = '%(asctime)s - %(message)s'
-    file_formatter = logging.Formatter(file_log_format)
+    file_formatter = ColoredHtmlFormatter(file_log_format)
     console_formatter = logging.Formatter(console_log_format)
     file_handler.setFormatter(file_formatter)
     console_handler.setFormatter(console_formatter)
@@ -31,3 +31,17 @@ def init_logger(logdir='./logs', debug=False):
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
+
+class ColoredHtmlFormatter(logging.Formatter):
+    color_map = {
+        logging.DEBUG: 'background-color:powderblue;',
+        logging.INFO: 'color:black;',
+        logging.WARNING: 'background-color:yellow;',
+        logging.ERROR: 'background-color:red;',
+        logging.CRITICAL: 'background-color:red;'
+    }
+
+    def format(self, record):
+        message = super().format(record)
+        style = self.color_map.get(record.levelno, 'color:black;')
+        return f'<p style="{style}"> {message} </p>'
