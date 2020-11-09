@@ -41,7 +41,7 @@ class GoogleSheetsCamsParser:
         return cams
 
 
-def read_config(conf_path='visca_onvif_config.txt'):
+def read_config(conf_path):
     try:
         with open(conf_path) as config:
             data = json.load(config)
