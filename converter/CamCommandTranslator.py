@@ -1,6 +1,6 @@
-from .visca_tools.ViscaCommandClassificator import classify_visca_command
-from .visca_tools.ViscaCommandFormer import form_visca_command
-from .onvif_tools.ONVIFCameraControl import ONVIFCameraControl
+from converter.visca_tools.ViscaCommandClassificator import classify_visca_command
+from converter.visca_tools.ViscaCommandFormer import form_visca_command
+from converter.onvif_tools.ONVIFCameraControl import ONVIFCameraControl
 import socket
 from select import select
 import logging

@@ -5,9 +5,9 @@ from time import sleep
 from copy import deepcopy
 from onvif import ONVIFError
 
-from .CamCommandTranslator import CamCommandTranslator as Translator
-from .CamsParser import GoogleSheetsCamsParser, read_config
-from .LoggingTools import init_logger
+from converter.CamCommandTranslator import CamCommandTranslator as Translator
+from converter.CamsParser import GoogleSheetsCamsParser, read_config
+from converter.LoggingTools import init_logger
 
 
 logger = logging.getLogger('Server')
