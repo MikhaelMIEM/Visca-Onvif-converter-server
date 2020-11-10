@@ -3,20 +3,21 @@ version: '2'
 services:
     converter:
         ports:
-            - "10000-10100:10000-10100"
-        #volumes:
-        #    - ${LOGDIR}:/${LOGDIR}
+            - "10000-10200:10000-10200"
+        volumes:
+            - ${LOGDIR}:/logdir
+            - ${JSON_KEYFILE}:/keyfile.json
         build: ./converter
-        command: python3 main.py --use-google --json-keyfile ${JSON_KEYFILE} --spreadsheet ${SPREADSHEET_NAME} --logdir ${LOGDIR}
+        command: python3 main.py --use-google --json-keyfile keyfile.json --spreadsheet ${SPREADSHEET_NAME} --logdir /logdir
         restart: always
 
     logs_serving:
         ports:
             - "80:80"
         volumes:
-            - ./${LOGDIR}:/${LOGDIR}
+            - ${LOGDIR}:/logdir
         build: ./logs_serving
-        command: python3 -m http.server ${LOGGER_PORT} --directory ${LOGDIR}
+        command: python3 -m http.server 80 --directory /logdir
         restart: always
         depends_on:
             -   converter
