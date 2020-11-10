@@ -18,3 +18,5 @@ services:
         build: ./logs_serving
         command: python3 -m http.server ${LOGGER_PORT} --directory ${LOGDIR}
         restart: always
+        depends_on:
+            -   converter
