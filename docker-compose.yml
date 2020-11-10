@@ -3,7 +3,7 @@ version: '2'
 services:
     converter:
         ports:
-            - "10000-65535:10000-65535"
+            - "1-65535:1-65535"
         volumes:
             - ./${LOGDIR}:/${LOGDIR}
         build: ./converter
