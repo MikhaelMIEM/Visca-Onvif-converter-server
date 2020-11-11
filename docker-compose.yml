@@ -2,12 +2,11 @@ version: '2'
 
 services:
     converter:
-        ports:
-            - "10000-10200:10000-10200"
         volumes:
             - ${LOGDIR}:/logdir
             - ${JSON_KEYFILE}:/keyfile.json
         build: ./converter
+        network_mode: host
         command: python3 main.py --use-google --json-keyfile keyfile.json --spreadsheet ${SPREADSHEET_NAME} --logdir /logdir
         restart: always
 
