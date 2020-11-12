@@ -28,8 +28,12 @@ class GoogleSheetsCamsParser:
             ip = data[1][0]
             port = int(data[1][1])
             addr = (ip, port)
-            cam = {"onvif_cam_login": data[1][2], "onvif_cam_password": data[1][3], "visca_server_port": int(data[1][4]),
-                   "preset_client_range": {}}
+            cam = {
+                "onvif_cam_login": data[1][2],
+                "onvif_cam_password": data[1][3],
+                "visca_server_port": int(data[1][4]),
+                "preset_client_range": {}
+            }
             preset_range = cam["preset_client_range"]
             for line in data[4:]:
                 preset_range[line[0]] = {}

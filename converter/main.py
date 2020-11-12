@@ -13,7 +13,7 @@ from LoggingTools import init_logger
 logger = logging.getLogger('Server')
 lock = Lock()
 thread_pool = {}
-refresh_every_sec = 34
+refresh_every_sec = 30
 
 
 def get_arguments():
@@ -147,7 +147,9 @@ if __name__ == '__main__':
         lock.release()
 
         stop_altered_threads(cams)
+        sleep(2)
         clear_dead_threads()
+        sleep(2)
         start_new_threads(cams)
 
         sleep(refresh_every_sec)

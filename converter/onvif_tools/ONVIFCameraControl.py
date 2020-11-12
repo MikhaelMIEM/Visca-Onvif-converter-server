@@ -33,7 +33,7 @@ class ONVIFCameraControl:
         self.__video_source = self.__get_video_sources()[0]
         self.__status = self.__ptz_service.GetStatus({'ProfileToken': self.__profile.token})
 
-        logging.info(f'Initialized camera at {addr} successfully')
+        logging.debug(f'Initialized camera at {addr} successfully')
 
     def get_stream_uri(self, protocol='UDP', stream='RTP-Unicast'):
         """
