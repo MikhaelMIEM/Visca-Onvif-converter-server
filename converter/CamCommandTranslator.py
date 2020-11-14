@@ -11,7 +11,8 @@ logger = logging.getLogger(__name__)
 class CamCommandTranslator:
     def __init__(self, visca_server_port, onvif_cam_addr, onvif_cam_login, onvif_cam_password,
                  cam_storage, lock=None):
-        logger.info(f'Initializing service 0.0.0.0:{visca_server_port} -> {onvif_cam_addr}')
+        logger.info(f'Initializing service {socket.gethostbyname(socket.gethostname())}:'
+                    f'{visca_server_port} -> {onvif_cam_addr}')
 
         self.__onvif_cam_addr = onvif_cam_addr
         self.__visca_server_port = visca_server_port
@@ -24,7 +25,8 @@ class CamCommandTranslator:
         self.lock = lock
         self.__default_addr = 'default'
 
-        logger.info(f'Initializing service 0.0.0.0:{visca_server_port} -> {onvif_cam_addr} complete')
+        logger.info(f'Initializing service {socket.gethostbyname(socket.gethostname())}:'
+                    f'{visca_server_port} -> {onvif_cam_addr} complete')
 
     def __create_socket(self):
         logger.debug(f'Create socket')

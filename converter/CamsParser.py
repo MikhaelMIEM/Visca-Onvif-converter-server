@@ -25,6 +25,8 @@ class GoogleSheetsCamsParser:
                 data = worksheet.get_all_values()
             except AttributeError:
                 break
+            if not data:
+                continue
             ip = data[1][0]
             port = int(data[1][1])
             addr = (ip, port)

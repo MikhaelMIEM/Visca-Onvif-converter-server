@@ -14,6 +14,7 @@ logger = logging.getLogger('Server')
 lock = Lock()
 thread_pool = {}
 refresh_every_sec = 30
+QUOTA_WARNING_CAM_AMOUNT = 20
 
 
 def get_arguments():
@@ -78,9 +79,10 @@ def start_new_threads(cams):
                 logger.error('Check config params.' + str(e))
                 continue
             thread_pool[onvif_cam_addr].start()
-            if len(thread_pool) == 20:
-                logger.warning('It is not recommended to use more than 20 cams due to Google api requests quotas. '
-                               'If you are using file config, it is ok =)')
+            if len(thread_pool) == QUOTA_WARNING_CAM_AMOUNT:
+                logger.warning(f'It is not recommended to use more than {QUOTA_WARNING_CAM_AMOUNT} cams '
+                               f'due to Google api requests quotas. '
+                               f'If you are using file config, it is ok')
 
 
 def clear_dead_threads():
@@ -139,8 +141,7 @@ if __name__ == '__main__':
             else:
                 cams = read_config(args.conf)
         except Exception as e:
-            logger.error('Error occur during cams fetching. ' + str(e))
-            cams = {}
+            logger.error('Error occurs during cams fetching. ' + str(e))
 
         lock.acquire()
         cam_storage.set_cams(cams)
