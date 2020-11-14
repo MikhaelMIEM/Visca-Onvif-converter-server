@@ -8,6 +8,8 @@
     * [Google sheets config](#google-sheets-config)
         * [Setup](#setup-1)
         * [Launch](#launch-1)
+    * [Parameters](#parameters)
+    * [Vmix use](#vmix-use)
 
 # Visca to Onvif converter server
 This is a **Visca over udp** to **Onvif** command converter which is implemented as server
