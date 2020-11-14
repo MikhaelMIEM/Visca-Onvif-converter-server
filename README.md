@@ -1,7 +1,13 @@
-#### Table of content
+# Table of content
 * [Visca to Onvif converter server](#visca-to-onvif-converter-server)
     * [Converter specifics](#converter-specifics)
 * [Usage](#usage)
+    * [File config](#file-config)
+        * [Setup](#setup)
+        * [Launch](#launch)
+    * [Google sheets config](#google-sheets-config)
+        * [Setup](#setup-1)
+        * [Launch](#launch-1)
 
 # Visca to Onvif converter server
 This is a **Visca over udp** to **Onvif** command converter which is implemented as server
