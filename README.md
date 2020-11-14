@@ -176,8 +176,8 @@ cd ./Visca-Onvif-converter-server/converter
 vim .env
 ```
 ```shell script
-JSON_KEYFILE=./visca-onvif-converter.json  # Google service account credentials json file
-SPREADSHEET_NAME=visca_onvif_converter_config  # Name of config spreadsheet 
+JSON_KEYFILE=./visca-onvif-converter.json  # Specify Google service account credentials json file
+SPREADSHEET_NAME=visca_onvif_converter_config  # Specify name of config spreadsheet 
 LOGDIR=./logs
 ```
 Run docker-compose
