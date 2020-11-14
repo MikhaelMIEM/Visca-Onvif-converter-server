@@ -112,7 +112,7 @@ next in a row value will be used as a preset number and so on until `max` value 
 starts over from `min` value; `default` client address specified preset range for all unrecognised clients
 
 Also server reads file config every 35 seconds so no needed to restart server to refresh cameras data, 
-just put it in the file and save will be enough
+just putting it in the file and save will be enough
 
 ### Launch
 
