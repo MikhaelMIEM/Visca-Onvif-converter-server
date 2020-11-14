@@ -1,3 +1,8 @@
+#### Table of content
+* [Visca to Onvif converter server](#visca-to-onvif-converter-server)
+    * [Converter specifics](#converter-specifics)
+* [Usage](#usage)
+
 # Visca to Onvif converter server
 This is a **Visca over udp** to **Onvif** command converter which is implemented as server
 
@@ -190,4 +195,13 @@ At docker-compose launch current logs are available in *hostname:80* and can see
   
 ## Vmix use
 
-After configuration and launching
+After configuration and launching converter can be used by *Vmix*
+
+In ptz settings choice `PTZ Optics VISCA UDP` command format and connect to *hostname:visca_port* specified in config.
+All ptz movements provided by *Vmix* are translated to the *Onvif* cam.
+![](images/ptz_panel.PNG)
+
+By clicking on `Create Input at this Position`  *Vmix* creates presets at current position.
+
+By clicking at particular Input *Onvif* cam go to this position
+![](images/inputs.PNG)
