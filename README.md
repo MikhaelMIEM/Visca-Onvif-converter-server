@@ -33,8 +33,8 @@ is implemented through *Onvif* preset setting logic.
 
 In the case of *visca Vmix* client wants to create camera *input* in the particular position, it sends command to 
 request *visca* camera positon. Converter receive this command
-and create *Onvif* preset in the permitted in config preset range (ТУТ ССЫЛКУ ВСТАВЬ) for this *Vmix visca* client. Than converter sends back 
-to *Vmix visca* client this preset number instead of real coordinates.
+and create *Onvif* preset in the permitted in config preset range (see [usage](#usage)) for this *Vmix visca* client.
+Than converter sends back to *Vmix visca* client this preset number instead of real coordinates.
 
 If *Vmix* sends command to go to particular position, converter extract preset number out of go to coordinates
 request and sets *Onvif* camera in this position.
@@ -211,5 +211,5 @@ All ptz movements provided by *Vmix* are translated to the *Onvif* cam.
 
 By clicking on `Create Input at this Position`  *Vmix* creates presets at current position.
 
-By clicking at particular Input *Onvif* cam go to this position
+By clicking at a particular Input *Onvif* cam go to this position
 ![](images/inputs.PNG)
