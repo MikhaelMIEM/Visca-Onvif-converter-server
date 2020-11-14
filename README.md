@@ -136,7 +136,7 @@ Another way to configure server is to use *Google sheets* table
 
 ### Setup
 First, required to create *Google sheets* table and google service account with credentials in json format.
-Then add this service account to the *Google sheets* table as editor. All this steps described 
+Then add this service account to the *Google sheets* table with *editor* access rights. All this steps described 
 in [this video tutorial](https://www.youtube.com/watch?v=cnPlKLEGR7E&t=112s).
 
 To enable *Google sheets* config use `--use-google` flag.
