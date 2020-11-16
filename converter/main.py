@@ -110,6 +110,7 @@ if __name__ == '__main__':
     init_logger(args.logdir, debug=args.debug)
     cam_storage = CamStorage()
     google_sheet = None
+    cams = dict()
 
     logger.info(
         "Visca to Onvif converter has been started. "
